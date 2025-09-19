@@ -3,7 +3,7 @@ import { generateToken } from "../utilis/tokenGeneration.js";
 
 export const signup = async (req, res) => {
   try {
-    const { fullname, email, password } = req.body;
+    const { fullname, email, password, role } = req.body;
 
     // Check if user already exists
     const existingUser = await UserModel.findOne({ email });
@@ -14,7 +14,7 @@ export const signup = async (req, res) => {
     }
 
     // Create new user
-    const user = new UserModel({ fullname, email, password });
+    const user = new UserModel({ fullname, email,role, password  });
     await user.save();
 
     console.log("User Store in DB", user);
@@ -30,6 +30,7 @@ export const signup = async (req, res) => {
         id: user._id,
         fullname: user.fullname,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -64,6 +65,7 @@ export const signin = async (req, res) => {
         id: user._id,
         fullname: user.fullname,
         email: user.email,
+        role:user.role
       },
     };
 
@@ -75,9 +77,7 @@ export const signin = async (req, res) => {
   }
 };
 
-
 export const signOut = () => {
-  
   localStorage.removeItem("token");
   localStorage.removeItem("user");
 

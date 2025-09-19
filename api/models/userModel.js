@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
     password: { type: String, required: true, minlength: 6 },
+    role: {
+      type: String,
+      enum: ["super-admin", "manager", "staff", "viewer", "customer"],
+      default: "customer",
+    },
   },
   { timestamps: true }
 );

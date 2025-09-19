@@ -116,7 +116,7 @@ export const invoiceValidate = async (req, res) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.FBR_SANDBOX_VALIDATE_TOKEN}`,
+          Authorization: `Bearer ${process.env.FBR_SANDBOX_TOKEN}`,
         },
       }
     );

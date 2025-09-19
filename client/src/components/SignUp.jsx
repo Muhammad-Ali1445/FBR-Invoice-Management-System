@@ -10,6 +10,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
+    role: "",
     password: "",
     confirmPassword: "",
   });
@@ -94,12 +95,14 @@ const SignUp = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Account created successfully!");
-      navigate("/sign-in");
+      window.location.reload();
     } catch (error) {
       toast.error("Sign Up Error");
       console.log(error.message || "Sign Up Error");
     }
   };
+
+  console.log("Submitted Form Data", formData);
 
   return (
     <div className="p-8">
@@ -165,6 +168,35 @@ const SignUp = () => {
           </div>
           {errors.fullname && (
             <p className="mt-1 text-sm text-red-600">{errors.fullname}</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="role"
+            className="block text-gray-700 text-sm font-medium mb-2"
+          >
+            Role
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className={`w-full pl-3 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
+              errors.role
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+            }`}
+          >
+            <option value="">Select Role</option>
+            <option value="customer">Customer</option>
+            <option value="manager">Manager</option>
+            <option value="staff">Staff</option>
+            <option value="viewer">Viewer</option>
+          </select>
+          {errors.role && (
+            <p className="mt-1 text-sm text-red-600">{errors.role}</p>
           )}
         </div>
 

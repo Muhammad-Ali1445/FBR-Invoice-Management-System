@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
 const SignIn = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -84,6 +84,7 @@ const navigate = useNavigate();
 
       toast.success("Login Successful");
       navigate("/");
+      window.location.reload();
     } catch (error) {
       toast.error("Login Error");
       console.log(error.message);

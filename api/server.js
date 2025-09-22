@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import invoiceRouter from "./routes/invoice.route.js";
 import authRouter from "./routes/auth.route.js";
+import roleRouter from "./routes/roles.route.js"
+import userRouter from "./routes/users.route.js"
+import permissionRouter from "./routes/permissions.route.js"
 import path from "path";
 
 dotenv.config();
@@ -16,7 +19,9 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/invoice", invoiceRouter);
 app.use("/api/auth", authRouter);
-
+app.use("/api/roles", roleRouter);
+app.use("/api/users", userRouter);
+app.use("/api/permissions", permissionRouter);
 
 // Test route
 app.get("/", (req, res) => {

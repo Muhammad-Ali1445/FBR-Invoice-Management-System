@@ -1,27 +1,37 @@
-import UserModel from "../models/userModel.js";
+import UserModel from "../models/userrModel.js";
 import { generateToken } from "../utilis/tokenGeneration.js";
+import mongoose from "mongoose";
 
+// ---- Signup ------
 export const signup = async (req, res) => {
   try {
-    const { fullname, email, password, role } = req.body;
+    const { fullname, email, password, roleName } = req.body;
 
-    // Check if user already exists
+    // Check existing user
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists with this email",
-      });
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    // Create new user
-    const user = new UserModel({ fullname, email,role, password  });
+    // Find role (default = Viewer)
+    const Role = mongoose.model("Role");
+    const role = await Role.findOne({ name: roleName || "Viewer" });
+    if (!role) {
+      return res.status(400).json({ message: "Invalid role specified" });
+    }
+
+    // Create user
+    const user = new UserModel({
+      fullname,
+      email,
+      password,
+      role: role._id,
+    });
     await user.save();
 
-    console.log("User Store in DB", user);
+    await role.updateUserCount();
 
-    // Generate token
     const token = generateToken(user);
-    console.log("Generated token", token);
 
     res.status(201).json({
       message: "User created successfully",
@@ -30,56 +40,62 @@ export const signup = async (req, res) => {
         id: user._id,
         fullname: user.fullname,
         email: user.email,
-        role: user.role,
+        role: role.name,
       },
     });
   } catch (error) {
     console.error("Signup error:", error);
-    res.status(500).json({ message: "Server error during registration" });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// ---- Signin ------
 export const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    const user = await UserModel.findOne({ email, isActive: true }).populate(
+      "role"
+    );
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Check password
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
+    if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
-    }
 
-    // Generate token
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = generateToken(user);
 
-    const responsePayload = {
+    res.json({
       message: "Login successful",
       token,
       user: {
         id: user._id,
         fullname: user.fullname,
         email: user.email,
-        role:user.role
+        role: user.role.name,
+        lastLogin: user.lastLogin,
       },
-    };
-
-    console.log("Response after signIn:", responsePayload);
-    res.json(responsePayload);
+    });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server error during login" });
+    console.error("Signin error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-export const signOut = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-
-  window.location.href = "/signin";
+// -------------------- SIGNOUT --------------------
+export const signOut = async (req, res) => {
+  try {
+    return res.json({
+      success: true,
+      message: "Signout successful. Please remove token from client storage.",
+    });
+  } catch (error) {
+    console.error("Signout error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error during signout" });
+  }
 };

@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import FBRAuthPortal from "./components/FBRAuthPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import RBACDashboard from "./pages/RBACDashboard";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <main className="p-6">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<RBACDashboard />} />
             <Route path="/sign-in" element={<FBRAuthPortal isLogin={true} />} />
             <Route
               path="/sign-up"

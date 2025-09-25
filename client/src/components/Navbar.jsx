@@ -32,24 +32,23 @@ function Navbar() {
         </Link>
 
         {/* Role based links */}
-        {user?.role &&
-          ["super-admin", "manager", "staff"].includes(user.role) && (
-            <>
-              <Link
-                to="/create-invoice"
-                className="flex items-center gap-2 hover:underline"
-              >
-                <BadgePlus className="w-5 h-5" /> Create Invoice
-              </Link>
+        {user?.role && ["Admin", "Manager", "Staff"].includes(user.role) && (
+          <>
+            <Link
+              to="/create-invoice"
+              className="flex items-center gap-2 hover:underline"
+            >
+              <BadgePlus className="w-5 h-5" /> Create Invoice
+            </Link>
 
-              <Link
-                to="/validate"
-                className="flex items-center gap-2 hover:underline"
-              >
-                <TicketCheck className="w-5 h-5" /> Validate Invoice
-              </Link>
-            </>
-          )}
+            <Link
+              to="/validate"
+              className="flex items-center gap-2 hover:underline"
+            >
+              <TicketCheck className="w-5 h-5" /> Validate Invoice
+            </Link>
+          </>
+        )}
 
         {/* Auth links */}
         {!user ? (

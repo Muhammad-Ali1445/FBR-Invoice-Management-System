@@ -14,6 +14,7 @@ import { toast } from "react-hot-toast";
 export function PermissionsPanel({
   permissionCategories = [],
   role,
+  setRoles,
   onPermissionsChange,
 }) {
   const [saving, setSaving] = useState(false);
@@ -29,33 +30,33 @@ export function PermissionsPanel({
   // helper: check if permission is enabled for role
   const isPermEnabled = (perm) => {
     return (
-      Array.isArray(role.permissions) && role.permissions.includes(perm.name)
+      Array.isArray(role.permissions) &&
+      role.permissions.includes(perm._id?.toString() || perm.id?.toString())
     );
   };
 
   // toggle single permission
   const handleToggle = async (perm, checked) => {
-    console.log("🔀 handleToggle called:", {
-      role: role.name,
-      perm: perm.name,
-      checked,
-      currentPermissions: role.permissions,
-    });
+    const permId = perm._id?.toString() || perm.id?.toString();
 
     try {
       const current = Array.isArray(role.permissions)
-        ? [...role.permissions]
+        ? role.permissions.map((p) => p.toString())
         : [];
+
       let updated;
       if (checked) {
-        updated = current.includes(perm.name)
-          ? current
-          : [...current, perm.name];
+        updated = current.includes(permId) ? current : [...current, permId];
       } else {
-        updated = current.filter((k) => k !== perm.name);
+        updated = current.filter((k) => k !== permId);
       }
 
-      console.log("✅ Updated permissions after toggle:", updated);
+      // ✅ Update frontend immediately
+      setRoles((prevRoles) =>
+        prevRoles.map((r) =>
+          r._id === role._id ? { ...r, permissions: updated } : r
+        )
+      );
 
       setSaving(true);
       await onPermissionsChange(role._id || role.id, updated);
@@ -81,7 +82,9 @@ export function PermissionsPanel({
       const current = Array.isArray(role.permissions)
         ? [...role.permissions]
         : [];
-      const categoryKeys = (category.permissions || []).map((p) => p.name);
+      const categoryKeys = (category.permissions || []).map(
+        (p) => p._id || p.id
+      );
 
       let updated;
       if (enable) {

@@ -6,7 +6,7 @@ const permissionSchema = new mongoose.Schema(
     key: { type: String, required: true, unique: true, trim: true },
     category: {
       type: String,
-      enum: ["invoices", "reports", "users", "system", "user_management"],
+      enum: ["invoices", "reports", "system", "user_management"],
       required: true,
     },
     resource: { type: String, required: true }, // e.g. "invoice"

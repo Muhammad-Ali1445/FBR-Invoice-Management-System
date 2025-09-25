@@ -20,21 +20,34 @@ function App() {
         <main className="p-6">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/dashboard" element={<RBACDashboard />} />
             <Route path="/sign-in" element={<FBRAuthPortal isLogin={true} />} />
             <Route
               path="/sign-up"
               element={<FBRAuthPortal isLogin={false} />}
             />
-            <Route path="/validate" element={<InvoiceValidator />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                  <RBACDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/create-invoice"
               element={
-                <ProtectedRoute
-                  allowedRoles={["super-admin", "manager", "staff"]}
-                >
+                <ProtectedRoute allowedPermissions={["create_invoice"]}>
                   <InvoiceForm />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/validate"
+              element={
+                <ProtectedRoute>
+                  <InvoiceValidator />
                 </ProtectedRoute>
               }
             />

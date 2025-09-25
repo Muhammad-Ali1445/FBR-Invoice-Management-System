@@ -202,6 +202,12 @@ const roles = [
     icon: "👁️",
     color: "from-gray-500 to-gray-600",
   },
+  {
+    name: "Customer",
+    description: "External user with access only to their own invoices",
+    icon: "🛒",
+    color: "from-green-500 to-green-600",
+  },
 ];
 
 // ----------------- SEED FUNCTION -----------------
@@ -249,6 +255,14 @@ const seedDatabase = async () => {
             .filter((p) => p.action === "read")
             .map((p) => p._id);
           break;
+
+        case "Customer":
+          rolePermissions = createdPermissions
+            .filter(
+              (p) => p.category === "invoices" && p.action === "read" // only read invoices
+            )
+            .map((p) => p._id);
+          break;
       }
 
       const role = new RoleModel({
@@ -267,7 +281,7 @@ const seedDatabase = async () => {
     console.log("📌 Creating admin user...");
     const adminRole = createdRoles.find((role) => role.name === "Admin");
     const adminUser = new UserModel({
-      username: "admin",
+      fullname: "admin",
       email: "admin@fbr.gov.pk",
       password: "admin123", // will be hashed by pre-save hook
       role: adminRole._id,

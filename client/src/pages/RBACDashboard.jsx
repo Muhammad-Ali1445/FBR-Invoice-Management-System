@@ -10,7 +10,6 @@ import { Shield, Users, KeyRound } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 
-
 const RBACDashboard = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [roles, setRoles] = useState([]);
@@ -46,16 +45,12 @@ const RBACDashboard = () => {
 
       await roleService.updateRolePermissions(roleId, permissionIds);
 
-      const updatedRoles = await roleService.getAllRoles();
-      setRoles(updatedRoles);
-
-      const updatedSelectedRole = updatedRoles.find(
-        (role) => (role._id || role.id) === roleId
-      );
-      setSelectedRole(updatedSelectedRole);
+      // ✅ Instead of reloading everything:
+      setSelectedRole({ ...selectedRole, permissions });
+      toast.success("Permissions updated");
     } catch (error) {
+      toast.error("Failed to update permissions");
       console.error("Update permissions error:", error);
-      throw error;
     }
   };
 
@@ -144,6 +139,7 @@ const RBACDashboard = () => {
           {selectedRole ? (
             <PermissionsPanel
               role={selectedRole}
+              setRoles={setRoles}
               permissionCategories={permissionCategories}
               onPermissionsChange={handlePermissionsChange}
             />
@@ -159,7 +155,5 @@ const RBACDashboard = () => {
     </div>
   );
 };
-
-
 
 export default RBACDashboard;

@@ -15,7 +15,9 @@ export const signup = async (req, res) => {
 
     // Find role (default = Viewer)
     const Role = mongoose.model("Role");
-    const role = await Role.findOne({ name: roleName || "Viewer" });
+    const role = await Role.findOne({ name: roleName || "Viewer" }).populate(
+      "permissions"
+    );
     if (!role) {
       return res.status(400).json({ message: "Invalid role specified" });
     }
@@ -33,6 +35,9 @@ export const signup = async (req, res) => {
 
     const token = generateToken(user);
 
+    // extract permissions as array of keys
+    const permissions = role.permissions.map((p) => p.key);
+
     res.status(201).json({
       message: "User created successfully",
       token,
@@ -41,6 +46,7 @@ export const signup = async (req, res) => {
         fullname: user.fullname,
         email: user.email,
         role: role.name,
+        permissions, // ✅ include permissions here
       },
     });
   } catch (error) {
@@ -54,20 +60,40 @@ export const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await UserModel.findOne({ email, isActive: true }).populate(
-      "role"
-    );
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    // 🔹 Find user and populate role + permissions + user overrides
+    const user = await UserModel.findOne({ email, isActive: true })
+      .populate({
+        path: "role",
+        populate: { path: "permissions" }, // role → permissions
+      })
+      .populate("permissions") // user-level overrides
+      .exec();
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch)
+    if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
 
+    // 🔹 Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // 🔹 Update last login
     user.lastLogin = new Date();
     await user.save();
 
+    // 🔹 JWT token
     const token = generateToken(user);
 
+    // 🔹 Extract role & user permissions → combine → unique
+    const rolePermissions = user.role?.permissions?.map((p) => p.key) || [];
+    const userPermissions = user.permissions?.map((p) => p.key) || [];
+    const allPermissions = [
+      ...new Set([...rolePermissions, ...userPermissions]),
+    ];
+
+    // 🔹 Response
     res.json({
       message: "Login successful",
       token,
@@ -76,6 +102,7 @@ export const signin = async (req, res) => {
         fullname: user.fullname,
         email: user.email,
         role: user.role.name,
+        permissions: allPermissions, // ✅ merged permissions
         lastLogin: user.lastLogin,
       },
     });

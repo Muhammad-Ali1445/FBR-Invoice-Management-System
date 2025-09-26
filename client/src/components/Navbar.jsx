@@ -31,7 +31,17 @@ function Navbar() {
           <BadgePlus className="w-5 h-5" /> Home
         </Link>
 
-        {/* Role based links */}
+        {/* Dashboard - only for Admin */}
+        {user?.role === "Admin" && (
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 hover:underline"
+          >
+            <BadgePlus className="w-5 h-5" /> Dashboard
+          </Link>
+        )}
+
+        {/* Role-based links */}
         {user?.role && ["Admin", "Manager", "Staff"].includes(user.role) && (
           <>
             <Link

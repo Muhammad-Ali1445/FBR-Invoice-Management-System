@@ -37,7 +37,7 @@ function App() {
             <Route
               path="/create-invoice"
               element={
-                <ProtectedRoute allowedPermissions={["create_invoice"]}>
+                <ProtectedRoute allowedPermissions={["invoice.create"]}>
                   <InvoiceForm />
                 </ProtectedRoute>
               }

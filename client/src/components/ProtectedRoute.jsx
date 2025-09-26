@@ -11,12 +11,24 @@ function ProtectedRoute({
     return <Navigate to="/sign-in" replace />;
   }
 
-  const roleName = user?.role?.name || user?.role; // support if role is just a string
-  const rolePermissions = user?.role?.permissions?.map((p) => p.name) || [];
-  const userPermissions = user?.permissions?.map((p) => p.name) || [];
+  // ✅ Fixed role and permission extraction
+  const roleName =
+    typeof user?.role === "string" ? user.role : user?.role?.name;
+
+  const rolePermissions = Array.isArray(user?.role?.permissions)
+    ? user.role.permissions.map((p) => p.name)
+    : [];
+
+  const userPermissions = Array.isArray(user?.permissions)
+    ? user.permissions
+    : [];
+
   const mergedPermissions = [
     ...new Set([...rolePermissions, ...userPermissions]),
   ];
+
+  console.log("Merged permissions:", mergedPermissions);
+  console.log("Allowed permissions:", allowedPermissions);
 
   // ✅ Role check (if provided)
   if (allowedRoles.length > 0 && !allowedRoles.includes(roleName)) {

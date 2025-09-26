@@ -2,6 +2,7 @@ import axios from "axios";
 import InvoiceModel from "../models/invoiceModel.js";
 
 // -------------------- Helper Logger --------------------
+
 const logFbrRequest = (type, payload) => {
   console.log(`\n================= FBR ${type} REQUEST =================`);
   console.log(JSON.stringify(payload, null, 2));
@@ -22,6 +23,7 @@ const logFbrResponse = (type, response) => {
 };
 
 // -------------------- POST INVOICE --------------------
+
 export const invoicePost = async (req, res) => {
   try {
     const { invoiceRefNo, sellerNTNCNIC } = req.body;

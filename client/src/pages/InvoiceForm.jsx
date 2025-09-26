@@ -95,15 +95,25 @@ export default function InvoiceForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem("token"); // token saved at login
+
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/invoice/post`,
-        formData
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // 👈 required
+          },
+        }
       );
+
       toast.success("Invoice submitted successfully! ✅");
       console.log(res.data);
     } catch (err) {
       if (err.response?.status === 400) {
         toast.error("Invoice already exists");
+      } else if (err.response?.status === 401) {
+        toast.error("Unauthorized: Please log in again");
       } else {
         toast.error("Error submitting invoice");
       }

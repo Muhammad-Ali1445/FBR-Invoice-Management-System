@@ -20,11 +20,12 @@ export default function InvoiceValidator() {
         `${import.meta.env.VITE_API_URL}/api/invoice/validate`,
         { invoiceRefNo, sellerNTNCNIC }
       );
+
       setResult(res.data);
-      console.log(res.data);
+      console.log("Validation Response:", res.data); // ✅ console after setting state
       toast.success("Validation completed");
     } catch (err) {
-      console.error(err);
+      console.error("Validation Error:", err);
       toast.error("Validation failed");
     }
   };
@@ -42,10 +43,12 @@ export default function InvoiceValidator() {
     );
   };
 
+  const invoice = result?.invoice || result?.localInvoice; // ✅ handle both API shapes
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
       <h2 className="text-2xl font-bold mb-4 text-indigo-600 text-center flex items-center justify-center gap-3">
-        <Search className="w-6 h-6" /> Validate Invoice
+         Validate Invoice
       </h2>
 
       {/* Form */}
@@ -73,157 +76,124 @@ export default function InvoiceValidator() {
       </div>
 
       {/* Result */}
-      {result && (
-        <div className="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner">
+      {invoice && (
+        <div className="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner relative">
           <h3 className="font-semibold text-lg text-gray-700 mb-4">
             Validation Result
           </h3>
 
           {/* Status */}
           <div className="mb-4 flex items-center gap-2">
-            {renderStatusBadge(result.localInvoice?.status)}
+            {renderStatusBadge(invoice?.status)}
             <span className="text-sm text-gray-700">
-              {result.message || "Invoice validation completed"}
+              {result?.message || "Invoice validation completed"}
             </span>
           </div>
 
-          {/* QR Code */}
-          {result.localInvoice && (
-            <div className="relative">
-              {/* QR Code - top right */}
-              <div className="absolute top-0 right-0 flex flex-col items-center">
-                <h4 className="font-semibold text-indigo-600 mb-2">
-                  Scan QR Code
-                </h4>
-                <QRCode
-                  value={`RefNo: ${result.localInvoice.invoiceRefNo}, NTN: ${result.localInvoice.sellerNTNCNIC}, Status: ${result.localInvoice.status}`}
-                  size={102}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Scan to verify invoice at FBR
-                </p>
-              </div>
-
-              {/* Invoice Details */}
-              <div className="space-y-4">
-                {/* your invoice info, seller, buyer, items, etc. */}
-              </div>
+          {/* QR Code - positioned top right */}
+          {invoice?.fbrResponse?.invoiceNumber && (
+            <div className="absolute top-6 right-6 flex flex-col items-center">
+              <h4 className="font-semibold text-indigo-600 mb-2">Scan QR Code</h4>
+              <QRCode value={invoice.fbrResponse.invoiceNumber} size={75} />
+              <p className="text-xs text-gray-500 mt-2">
+                Scan to verify invoice at FBR
+              </p>
             </div>
           )}
 
           {/* Invoice Details */}
-          {result.localInvoice ? (
-            <div className="space-y-4">
-              {/* Basic Info */}
-              <div>
-                <h4 className="font-semibold text-indigo-600">Invoice Info</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
-                  <p>
-                    <b>Type:</b> {result.localInvoice.invoiceType}
-                  </p>
-                  <p>
-                    <b>Date:</b> {result.localInvoice.invoiceDate}
-                  </p>
-                  <p>
-                    <b>Ref No:</b> {result.localInvoice.invoiceRefNo}
-                  </p>
-                  <p>
-                    <b>Scenario ID:</b> {result.localInvoice.scenarioId}
-                  </p>
-                </div>
+          <div className="space-y-4 mt-4">
+            {/* Basic Info */}
+            <div>
+              <h4 className="font-semibold text-indigo-600">Invoice Info</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
+                <p>
+                  <b>Type:</b> {invoice.invoiceType}
+                </p>
+                <p>
+                  <b>Date:</b> {invoice.invoiceDate}
+                </p>
+                <p>
+                  <b>Ref No:</b> {invoice.invoiceRefNo}
+                </p>
+                <p>
+                  <b>Scenario ID:</b> {invoice.scenarioId}
+                </p>
               </div>
+            </div>
 
-              {/* Seller */}
-              <div>
-                <h4 className="font-semibold text-indigo-600">Seller Info</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
-                  <p>
-                    <b>NTN/CNIC:</b> {result.localInvoice.sellerNTNCNIC}
-                  </p>
-                  <p>
-                    <b>Name:</b> {result.localInvoice.sellerBusinessName}
-                  </p>
-                  <p>
-                    <b>Province:</b> {result.localInvoice.sellerProvince}
-                  </p>
-                  <p>
-                    <b>Address:</b> {result.localInvoice.sellerAddress}
-                  </p>
-                </div>
+            {/* Seller */}
+            <div>
+              <h4 className="font-semibold text-indigo-600">Seller Info</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
+                <p>
+                  <b>NTN/CNIC:</b> {invoice.sellerNTNCNIC}
+                </p>
+                <p>
+                  <b>Name:</b> {invoice.sellerBusinessName}
+                </p>
+                <p>
+                  <b>Province:</b> {invoice.sellerProvince}
+                </p>
+                <p>
+                  <b>Address:</b> {invoice.sellerAddress}
+                </p>
               </div>
+            </div>
 
-              {/* Buyer */}
-              <div>
-                <h4 className="font-semibold text-indigo-600">Buyer Info</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
-                  <p>
-                    <b>NTN/CNIC:</b> {result.localInvoice.buyerNTNCNIC}
-                  </p>
-                  <p>
-                    <b>Name:</b> {result.localInvoice.buyerBusinessName}
-                  </p>
-                  <p>
-                    <b>Province:</b> {result.localInvoice.buyerProvince}
-                  </p>
-                  <p>
-                    <b>Address:</b> {result.localInvoice.buyerAddress}
-                  </p>
-                  <p>
-                    <b>Reg Type:</b> {result.localInvoice.buyerRegistrationType}
-                  </p>
-                </div>
+            {/* Buyer */}
+            <div>
+              <h4 className="font-semibold text-indigo-600">Buyer Info</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mt-2">
+                <p>
+                  <b>NTN/CNIC:</b> {invoice.buyerNTNCNIC}
+                </p>
+                <p>
+                  <b>Name:</b> {invoice.buyerBusinessName}
+                </p>
+                <p>
+                  <b>Province:</b> {invoice.buyerProvince}
+                </p>
+                <p>
+                  <b>Address:</b> {invoice.buyerAddress}
+                </p>
+                <p>
+                  <b>Reg Type:</b> {invoice.buyerRegistrationType}
+                </p>
               </div>
+            </div>
 
-              {/* Items */}
-              <div>
-                <h4 className="font-semibold text-indigo-600">Items</h4>
-                <table className="w-full text-sm border mt-2">
-                  <thead className="bg-gray-200 text-gray-700">
-                    <tr>
-                      <th className="p-2 border">HS Code</th>
-                      <th className="p-2 border">Description</th>
-                      <th className="p-2 border">Qty</th>
-                      <th className="p-2 border">Rate</th>
-                      <th className="p-2 border">Value</th>
-                      <th className="p-2 border">Sales Tax</th>
-                      <th className="p-2 border">Further Tax</th>
+            {/* Items */}
+            <div>
+              <h4 className="font-semibold text-indigo-600">Items</h4>
+              <table className="w-full text-sm border mt-2">
+                <thead className="bg-gray-200 text-gray-700">
+                  <tr>
+                    <th className="p-2 border">HS Code</th>
+                    <th className="p-2 border">Description</th>
+                    <th className="p-2 border">Qty</th>
+                    <th className="p-2 border">Rate</th>
+                    <th className="p-2 border">Value</th>
+                    <th className="p-2 border">Sales Tax</th>
+                    <th className="p-2 border">Further Tax</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.items?.map((item, idx) => (
+                    <tr key={idx} className="text-center">
+                      <td className="border p-2">{item.hsCode}</td>
+                      <td className="border p-2">{item.productDescription}</td>
+                      <td className="border p-2">{item.quantity}</td>
+                      <td className="border p-2">{item.rate}</td>
+                      <td className="border p-2">{item.totalValues}</td>
+                      <td className="border p-2">{item.salesTaxApplicable}</td>
+                      <td className="border p-2">{item.furtherTax}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {result.localInvoice.items?.map((item, idx) => (
-                      <tr key={idx} className="text-center">
-                        <td className="border p-2">{item.hsCode}</td>
-                        <td className="border p-2">
-                          {item.productDescription}
-                        </td>
-                        <td className="border p-2">{item.quantity}</td>
-                        <td className="border p-2">{item.rate}</td>
-                        <td className="border p-2">{item.totalValues}</td>
-                        <td className="border p-2">
-                          {item.salesTaxApplicable}
-                        </td>
-                        <td className="border p-2">{item.furtherTax}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <p className="text-sm text-red-600">
-              Invoice not found in local DB
-            </p>
-          )}
-
-          {/* FBR Info */}
-          {/* {result.fbrResponse?.validationResponse && (
-            <div className="mt-6">
-              <h4 className="font-semibold text-indigo-600">FBR Response</h4>
-              <pre className="bg-gray-100 p-3 rounded text-xs text-gray-700 overflow-x-auto mt-2">
-                {JSON.stringify(result.fbrResponse.validationResponse, null, 2)}
-              </pre>
-            </div>
-          )} */}
+          </div>
         </div>
       )}
     </div>

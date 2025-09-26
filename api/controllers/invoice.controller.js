@@ -85,6 +85,7 @@ export const invoicePost = async (req, res) => {
 };
 
 // -------------------- VALIDATE INVOICE --------------------
+
 export const invoiceValidate = async (req, res) => {
   try {
     const { invoiceRefNo, sellerNTNCNIC } = req.body;
@@ -125,21 +126,32 @@ export const invoiceValidate = async (req, res) => {
 
     logFbrResponse("VALIDATE", fbrResponse.data);
 
-    // 3️⃣ Update local invoice status
+    // 3️⃣ Update local invoice
     const validation = fbrResponse.data?.validationResponse;
-    if (validation?.status === "Invalid") {
-      localInvoice.status = "Invalid";
-    } else if (validation?.status === "Valid") {
-      localInvoice.status = "Valid";
-    }
-    localInvoice.fbrResponse = fbrResponse.data;
+
+    localInvoice.status =
+      validation?.status === "Invalid"
+        ? "Invalid"
+        : validation?.status === "Valid"
+        ? "Valid"
+        : "Pending";
+
+    // ✅ Merge fbrResponse correctly (preserve invoiceNumber if FBR doesn’t return it)
+    localInvoice.fbrResponse = {
+      ...localInvoice.fbrResponse,
+      invoiceNumber:
+        fbrResponse.data?.invoiceNumber ||
+        localInvoice.fbrResponse?.invoiceNumber,
+      dated: fbrResponse.data?.dated || localInvoice.fbrResponse?.dated,
+      validationResponse: fbrResponse.data?.validationResponse,
+    };
+
     await localInvoice.save();
 
     res.json({
       success: true,
       message: "Invoice validation completed",
-      localInvoice,
-      fbrResponse: fbrResponse.data,
+      invoice: localInvoice,
     });
   } catch (err) {
     console.error("Validation error:", err.response?.data || err.message);

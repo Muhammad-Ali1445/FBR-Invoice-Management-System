@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -19,6 +19,93 @@ export function PermissionsPanel({
 }) {
   const [saving, setSaving] = useState(false);
 
+  // normalize role permission IDs to a Set of strings
+  const rolePermissionIds = useMemo(() => {
+    if (!role || !Array.isArray(role.permissions)) return new Set();
+    return new Set(
+      role.permissions.map((p) =>
+        typeof p === "string"
+          ? p
+          : p._id?.toString?.() || p.id?.toString?.() || ""
+      )
+    );
+  }, [role]);
+
+  // If permissionCategories are provided by API, use them. If empty, fall back to categories built from role.permissions
+  const categories = useMemo(() => {
+    if (Array.isArray(permissionCategories) && permissionCategories.length > 0) {
+      return permissionCategories;
+    }
+
+    // fallback: build categories from role.permissions (which should be populated objects)
+    const groups = {};
+    (role?.permissions || []).forEach((perm) => {
+      const cat = perm.category || "uncategorized";
+      if (!groups[cat]) groups[cat] = { name: cat, permissions: [] };
+      groups[cat].permissions.push(perm);
+    });
+    return Object.values(groups);
+  }, [permissionCategories, role]);
+
+  const isPermEnabled = (perm) => {
+    const id = perm._id?.toString?.() || perm.id?.toString?.() || "";
+    return rolePermissionIds.has(id);
+  };
+
+  // toggle a single permission -> build updated IDs array and call parent handler
+  const handleToggle = async (perm, checked) => {
+    if (!role) return;
+    const permId = perm._id?.toString?.() || perm.id?.toString?.();
+    const currentIds = Array.from(rolePermissionIds);
+
+    let updatedIds;
+    if (checked) {
+      updatedIds = currentIds.includes(permId) ? currentIds : [...currentIds, permId];
+    } else {
+      updatedIds = currentIds.filter((id) => id !== permId);
+    }
+
+    try {
+      setSaving(true);
+      // parent will call the API and update selectedRole in state
+      await onPermissionsChange(role._id || role.id, updatedIds);
+      // success toast handled in parent — optional local toast:
+      // toast.success("Permissions updated");
+    } catch (err) {
+      console.error("Failed to update permission:", err);
+      toast.error("Failed to update permission");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // toggle whole category
+  const handleToggleCategory = async (category, enable) => {
+    if (!role) return;
+    const categoryIds = (category.permissions || []).map(
+      (p) => p._id?.toString?.() || p.id?.toString?.()
+    );
+    
+    const currentIds = Array.from(rolePermissionIds);
+    let updatedIds;
+    if (enable) {
+      const set = new Set([...currentIds, ...categoryIds]);
+      updatedIds = Array.from(set);
+    } else {
+      updatedIds = currentIds.filter((id) => !categoryIds.includes(id));
+    }
+
+    try {
+      setSaving(true);
+      await onPermissionsChange(role._id || role.id, updatedIds);
+    } catch (err) {
+      console.error("Category toggle failed:", err);
+      toast.error("Failed to update category");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!role) {
     return (
       <Card className="p-4 text-center text-muted-foreground">
@@ -26,86 +113,6 @@ export function PermissionsPanel({
       </Card>
     );
   }
-
-  // helper: check if permission is enabled for role
-  const isPermEnabled = (perm) => {
-    return (
-      Array.isArray(role.permissions) &&
-      role.permissions.includes(perm._id?.toString() || perm.id?.toString())
-    );
-  };
-
-  // toggle single permission
-  const handleToggle = async (perm, checked) => {
-    const permId = perm._id?.toString() || perm.id?.toString();
-
-    try {
-      const current = Array.isArray(role.permissions)
-        ? role.permissions.map((p) => p.toString())
-        : [];
-
-      let updated;
-      if (checked) {
-        updated = current.includes(permId) ? current : [...current, permId];
-      } else {
-        updated = current.filter((k) => k !== permId);
-      }
-
-      // ✅ Update frontend immediately
-      setRoles((prevRoles) =>
-        prevRoles.map((r) =>
-          r._id === role._id ? { ...r, permissions: updated } : r
-        )
-      );
-
-      setSaving(true);
-      await onPermissionsChange(role._id || role.id, updated);
-      toast.success("Permissions updated");
-    } catch (err) {
-      console.error("❌ Failed to update permissions", err);
-      toast.error("Failed to update permissions");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // toggle category
-  const handleToggleCategory = async (category, enable) => {
-    console.log("📂 handleToggleCategory called:", {
-      role: role.name,
-      category: category.name,
-      enable,
-      currentPermissions: role.permissions,
-    });
-
-    try {
-      const current = Array.isArray(role.permissions)
-        ? [...role.permissions]
-        : [];
-      const categoryKeys = (category.permissions || []).map(
-        (p) => p._id || p.id
-      );
-
-      let updated;
-      if (enable) {
-        const set = new Set([...current, ...categoryKeys]);
-        updated = Array.from(set);
-      } else {
-        updated = current.filter((k) => !categoryKeys.includes(k));
-      }
-
-      console.log("✅ Updated permissions after category toggle:", updated);
-
-      setSaving(true);
-      await onPermissionsChange(role._id || role.id, updated);
-      toast.success(`${enable ? "Enabled" : "Disabled"} ${category.name}`);
-    } catch (err) {
-      console.error("❌ Category toggle failed", err);
-      toast.error("Failed to update category");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <Card className="h-full">
@@ -115,46 +122,30 @@ export function PermissionsPanel({
       </CardHeader>
 
       <CardContent>
-        {/* Global Enable/Disable */}
         <div className="mb-4 flex gap-2">
           <Button
             size="sm"
-            onClick={() =>
-              handleToggleCategory(
-                {
-                  permissions: permissionCategories.flatMap(
-                    (c) => c.permissions
-                  ),
-                  name: "All",
-                },
-                true
-              )
-            }
+            onClick={() => {
+              const all = categories.flatMap((c) => c.permissions || []);
+              const allIds = all.map((p) => p._id?.toString?.() || p.id?.toString?.());
+              handleToggleCategory({ permissions: all }, true);
+            }}
           >
             Enable All
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() =>
-              handleToggleCategory(
-                {
-                  permissions: permissionCategories.flatMap(
-                    (c) => c.permissions
-                  ),
-                  name: "All",
-                },
-                false
-              )
-            }
+            onClick={() => {
+              handleToggleCategory({ permissions: categories.flatMap((c) => c.permissions || []) }, false);
+            }}
           >
             Disable All
           </Button>
         </div>
 
-        {/* Accordion */}
         <Accordion type="multiple" className="w-full">
-          {permissionCategories.map((category) => {
+          {categories.map((category) => {
             const categoryEnabledCount = (category.permissions || []).reduce(
               (acc, p) => acc + (isPermEnabled(p) ? 1 : 0),
               0
@@ -166,16 +157,11 @@ export function PermissionsPanel({
 
             return (
               <AccordionItem key={category.name} value={category.name}>
-                {/* Trigger (just category info, NO buttons here) */}
                 <AccordionTrigger>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                      <span className="font-medium capitalize">
-                        {category.name}
-                      </span>
-                      <Badge variant="outline">
-                        {category.permissions?.length ?? 0}
-                      </Badge>
+                      <span className="font-medium capitalize">{category.name}</span>
+                      <Badge variant="outline">{category.permissions?.length ?? 0}</Badge>
                     </div>
 
                     <span className="text-xs text-muted-foreground">
@@ -184,7 +170,6 @@ export function PermissionsPanel({
                   </div>
                 </AccordionTrigger>
 
-                {/* Content (now contains the Enable/Disable button + permissions list) */}
                 <AccordionContent>
                   <div className="mb-2 flex justify-end">
                     <Button
@@ -212,16 +197,14 @@ export function PermissionsPanel({
                               {perm.description || perm.name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              key: {perm.name} • category: {perm.category}
+                              key: {perm.key} • category: {perm.category}
                             </p>
                           </div>
 
                           <div className="flex items-center gap-3">
                             <Switch
                               checked={enabled}
-                              onCheckedChange={(checked) => {
-                                handleToggle(perm, checked);
-                              }}
+                              onCheckedChange={(checked) => handleToggle(perm, checked)}
                             />
                           </div>
                         </div>

@@ -1,4 +1,3 @@
-// seedData.js
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import RoleModel from "./models/rolModel.js";
@@ -277,20 +276,39 @@ const seedDatabase = async () => {
       );
     }
 
-    // Create default admin user
+    // ----------------- Create default Admin user -----------------
     console.log("📌 Creating admin user...");
-    const adminRole = createdRoles.find((role) => role.name === "Admin");
+    const adminRole = createdRoles.find((r) => r.name === "Admin");
+    if (!adminRole) throw new Error("Admin role not found after creation.");
+
     const adminUser = new UserModel({
       fullname: "admin",
       email: "admin@fbr.gov.pk",
-      password: "admin123", // will be hashed by pre-save hook
+      password: "admin123", // will be hashed by pre-save hook in User model
       role: adminRole._id,
     });
 
     await adminUser.save();
     console.log("✅ Created admin user: admin@fbr.gov.pk (password: admin123)");
 
-    // Update role user counts
+    // ----------------- Create default Manager user -----------------
+    console.log("📌 Creating manager user...");
+    const managerRole = createdRoles.find((r) => r.name === "Manager");
+    if (!managerRole) throw new Error("Manager role not found after creation.");
+
+    const managerUser = new UserModel({
+      fullname: "manager",
+      email: "manager@fbr.gov.pk",
+      password: "manager123", // will be hashed by pre-save hook in User model
+      role: managerRole._id,
+    });
+
+    await managerUser.save();
+    console.log(
+      "✅ Created manager user: manager@fbr.gov.pk (password: manager123)"
+    );
+
+    // Update role user counts (if you have that method)
     console.log("📌 Updating role user counts...");
     for (const role of createdRoles) {
       if (typeof role.updateUserCount === "function") {
@@ -300,8 +318,10 @@ const seedDatabase = async () => {
 
     console.log("🎉 Database seeding completed successfully!");
     console.log("\n🔑 Login credentials:");
-    console.log("   Email: admin@fbr.gov.pk");
-    console.log("   Password: admin123");
+    console.log("   Admin -> Email: admin@fbr.gov.pk | Password: admin123");
+    console.log(
+      "   Manager -> Email: manager@fbr.gov.pk | Password: manager123"
+    );
   } catch (error) {
     console.error("❌ Error seeding database:", error);
   } finally {

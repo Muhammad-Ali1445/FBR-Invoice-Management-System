@@ -48,7 +48,7 @@ export default function InvoiceValidator() {
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
       <h2 className="text-2xl font-bold mb-4 text-indigo-600 text-center flex items-center justify-center gap-3">
-         Validate Invoice
+        Validate Invoice
       </h2>
 
       {/* Form */}
@@ -93,7 +93,9 @@ export default function InvoiceValidator() {
           {/* QR Code - positioned top right */}
           {invoice?.fbrResponse?.invoiceNumber && (
             <div className="absolute top-6 right-6 flex flex-col items-center">
-              <h4 className="font-semibold text-indigo-600 mb-2">Scan QR Code</h4>
+              <h4 className="font-semibold text-indigo-600 mb-2">
+                Scan QR Code
+              </h4>
               <QRCode value={invoice.fbrResponse.invoiceNumber} size={75} />
               <p className="text-xs text-gray-500 mt-2">
                 Scan to verify invoice at FBR

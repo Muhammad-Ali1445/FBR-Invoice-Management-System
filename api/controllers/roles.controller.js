@@ -1,6 +1,7 @@
 import RoleModel from "../models/rolModel.js";
 import PermissionModel from "../models/permissnModel.js";
 import UserModel from "../models/userrModel.js";
+import mongoose from "mongoose";
 
 // Get all roles
 export const getRoles = async (req, res) => {
@@ -23,7 +24,9 @@ export const getRoles = async (req, res) => {
 // Get specific role
 export const getRoleById = async (req, res) => {
   try {
-    const role = await RoleModel.findById(req.params.id).populate("permissions");
+    const role = await RoleModel.findById(req.params.id).populate(
+      "permissions"
+    );
 
     if (!role) {
       return res.status(404).json({ error: "Role not found" });
@@ -43,13 +46,17 @@ export const createRole = async (req, res) => {
 
     const existingRole = await RoleModel.findOne({ name });
     if (existingRole) {
-      return res.status(400).json({ error: "Role with this name already exists" });
+      return res
+        .status(400)
+        .json({ error: "Role with this name already exists" });
     }
 
     const role = new RoleModel({ name, description, icon, color, permissions });
     await role.save();
 
-    const populatedRole = await RoleModel.findById(role._id).populate("permissions");
+    const populatedRole = await RoleModel.findById(role._id).populate(
+      "permissions"
+    );
 
     res.status(201).json({
       message: "Role created successfully",
@@ -69,6 +76,7 @@ export const updateRolePermissions = async (req, res) => {
 
     if (!role) return res.status(404).json({ error: "Role not found" });
 
+    // validate incoming IDs
     const validPermissions = await PermissionModel.find({
       _id: { $in: permissions },
       isActive: true,
@@ -78,12 +86,24 @@ export const updateRolePermissions = async (req, res) => {
       return res.status(400).json({ error: "Some permissions are invalid" });
     }
 
-    role.permissions = permissions;
+    // 🔑 convert to ObjectId array
+    role.permissions = permissions.map((id) => new mongoose.Types.ObjectId(id));
+    console.log("Incoming permissions:", permissions);
+    console.log(
+      "Mapped to ObjectIds:",
+      permissions.map((id) => new mongoose.Types.ObjectId(id))
+    );
+
     await role.save();
 
-    const updatedRole = await RoleModel.findById(role._id).populate("permissions");
+    const updatedRole = await RoleModel.findById(role._id).populate(
+      "permissions"
+    );
 
-    res.json({ message: "Role permissions updated successfully", role: updatedRole });
+    res.json({
+      message: "Role permissions updated successfully",
+      role: updatedRole,
+    });
   } catch (error) {
     console.error("Update role permissions error:", error);
     res.status(500).json({ error: "Failed to update role permissions" });
@@ -104,7 +124,9 @@ export const updateRole = async (req, res) => {
         _id: { $ne: role._id },
       });
       if (existingRole) {
-        return res.status(400).json({ error: "Role with this name already exists" });
+        return res
+          .status(400)
+          .json({ error: "Role with this name already exists" });
       }
       role.name = name;
     }
@@ -116,7 +138,9 @@ export const updateRole = async (req, res) => {
 
     await role.save();
 
-    const updatedRole = await RoleModel.findById(role._id).populate("permissions");
+    const updatedRole = await RoleModel.findById(role._id).populate(
+      "permissions"
+    );
 
     res.json({ message: "Role updated successfully", role: updatedRole });
   } catch (error) {

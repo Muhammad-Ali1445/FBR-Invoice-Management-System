@@ -1,128 +1,55 @@
-const mockRoles = [
-  {
-    _id: "1",
-    name: "Admin",
-    description: "Full system access with all permissions",
-    permissions: [
-      "create_invoice",
-      "validate_invoice",
-      "view_invoice",
-      "manage_users",
-      "manage_roles",
-      "view_reports",
-      "system_settings",
-      "audit_logs",
-    ],
-    userCount: 1,
-    isActive: true,
-  },
-  {
-    _id: "2",
-    name: "Manager",
-    description: "Invoice management and reporting access",
-    permissions: [
-      "create_invoice",
-      "validate_invoice",
-      "view_invoice",
-      "view_reports",
-    ],
-    userCount: 2,
-    isActive: true,
-  },
-  {
-    _id: "3",
-    name: "Staff",
-    description: "Basic invoice creation and viewing",
-    permissions: ["create_invoice", "view_invoice"],
-    userCount: 5,
-    isActive: true,
-  },
-  {
-    _id: "4",
-    name: "Viewer",
-    description: "Read-only access to view invoices",
-    permissions: ["view_invoice"],
-    userCount: 10,
-    isActive: true,
-  },
-];
+import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const roleService = {
-  // Get all roles
   async getAllRoles() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockRoles);
-      }, 300);
+    const token = localStorage.getItem("token");
+    const res = await axios.get(`${API_URL}/api/roles`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    return res.data; // server returns { roles: [...] }
   },
 
-  // Get specific role
   async getRole(roleId) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const role = mockRoles.find((r) => r._id === roleId);
-        if (role) {
-          resolve(role);
-        } else {
-          reject({ error: "Role not found" });
-        }
-      }, 200);
+    const token = localStorage.getItem("token");
+    const res = await axios.get(`${API_URL}/api/roles/${roleId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    return res.data; // { role }
   },
 
-  // Create new role
   async createRole(roleData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newRole = {
-          _id: Date.now().toString(),
-          ...roleData,
-          userCount: 0,
-          isActive: true,
-        };
-        mockRoles.push(newRole);
-        resolve(newRole);
-      }, 500);
+    const token = localStorage.getItem("token");
+    const res = await axios.post(`${API_URL}/api/roles`, roleData, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    return res.data;
   },
 
-  // Update role permissions
+  // IMPORTANT: server returns { message, role } (role is populated)
   async updateRolePermissions(roleId, permissionIds) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const roleIndex = mockRoles.findIndex((r) => r._id === roleId);
-        if (roleIndex !== -1) {
-          mockRoles[roleIndex].permissions = permissionIds;
-          resolve(mockRoles[roleIndex]);
-        }
-      }, 500);
-    });
+    const token = localStorage.getItem("token");
+    const res = await axios.put(
+      `${API_URL}/api/roles/${roleId}/permissions`,
+      { permissions: permissionIds },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data; // { message, role }
   },
 
-  // Update role details
   async updateRole(roleId, roleData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const roleIndex = mockRoles.findIndex((r) => r._id === roleId);
-        if (roleIndex !== -1) {
-          mockRoles[roleIndex] = { ...mockRoles[roleIndex], ...roleData };
-          resolve(mockRoles[roleIndex]);
-        }
-      }, 500);
+    const token = localStorage.getItem("token");
+    const res = await axios.put(`${API_URL}/api/roles/${roleId}`, roleData, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    return res.data;
   },
 
-  // Delete role
   async deleteRole(roleId) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const roleIndex = mockRoles.findIndex((r) => r._id === roleId);
-        if (roleIndex !== -1) {
-          mockRoles.splice(roleIndex, 1);
-        }
-        resolve({ message: "Role deleted successfully" });
-      }, 500);
+    const token = localStorage.getItem("token");
+    const res = await axios.delete(`${API_URL}/api/roles/${roleId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    return res.data;
   },
 };

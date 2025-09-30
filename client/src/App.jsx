@@ -46,7 +46,7 @@ function App() {
             <Route
               path="/validate"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedPermissions={["invoice.validate"]}>
                   <InvoiceValidator />
                 </ProtectedRoute>
               }

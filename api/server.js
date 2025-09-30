@@ -4,9 +4,9 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import invoiceRouter from "./routes/invoice.route.js";
 import authRouter from "./routes/auth.route.js";
-import roleRouter from "./routes/roles.route.js"
-import userRouter from "./routes/users.route.js"
-import permissionRouter from "./routes/permissions.route.js"
+import roleRouter from "./routes/roles.route.js";
+import userRouter from "./routes/users.route.js";
+import permissionRouter from "./routes/permissions.route.js";
 import path from "path";
 
 dotenv.config();
@@ -15,7 +15,12 @@ const app = express();
 const __dirname = path.resolve();
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // explicitly allow frontend
+    credentials: true, // allow cookies / Authorization headers
+  })
+);
 app.use(express.json());
 app.use("/api/invoice", invoiceRouter);
 app.use("/api/auth", authRouter);

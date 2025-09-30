@@ -19,6 +19,8 @@ function Navbar() {
     window.location.href = "/sign-in";
   };
 
+  const hasPermission = (perm) => user?.permissions?.includes(perm);
+
   return (
     <nav className="bg-indigo-600 text-white px-6 py-6 shadow-md flex justify-between items-center">
       <h1 className="text-xl font-bold flex justify-center items-center gap-2">
@@ -31,7 +33,7 @@ function Navbar() {
           <BadgePlus className="w-5 h-5" /> Home
         </Link>
 
-        {/* Dashboard - only for Admin */}
+        {/* Dashboard - if Admin */}
         {user?.role === "Admin" && (
           <Link
             to="/dashboard"
@@ -41,34 +43,28 @@ function Navbar() {
           </Link>
         )}
 
-        {/* Role-based links */}
-        {user?.role && ["Admin", "Manager", "Staff"].includes(user.role) && (
-          <>
-            <Link
-              to="/create-invoice"
-              className="flex items-center gap-2 hover:underline"
-            >
-              <BadgePlus className="w-5 h-5" /> Create Invoice
-            </Link>
+        {/* Permission-based links */}
+        {hasPermission("invoice.create") && (
+          <Link
+            to="/create-invoice"
+            className="flex items-center gap-2 hover:underline"
+          >
+            <BadgePlus className="w-5 h-5" /> Create Invoice
+          </Link>
+        )}
 
-            <Link
-              to="/validate"
-              className="flex items-center gap-2 hover:underline"
-            >
-              <TicketCheck className="w-5 h-5" /> Validate Invoice
-            </Link>
-          </>
+        {hasPermission("invoice.validate") && (
+          <Link
+            to="/validate"
+            className="flex items-center gap-2 hover:underline"
+          >
+            <TicketCheck className="w-5 h-5" /> Validate Invoice
+          </Link>
         )}
 
         {/* Auth links */}
         {!user ? (
           <>
-            <Link
-              to="/validate"
-              className="flex items-center gap-2 hover:underline"
-            >
-              <TicketCheck className="w-5 h-5" /> Validate Invoice
-            </Link>
             <Link
               to="/sign-in"
               className="flex items-center gap-2 hover:underline"
